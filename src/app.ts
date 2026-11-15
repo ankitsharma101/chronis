@@ -41,6 +41,9 @@ export function createApp(db: DatabaseSync): Express {
 
   // Error Handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+      return res.status(400).json({ error: 'BadRequest', detail: 'Invalid JSON payload' });
+    }
     console.error('Unhandled Server Error:', err);
     res.status(500).json({ error: 'InternalServerError', detail: 'An unexpected server error occurred.' });
   });
