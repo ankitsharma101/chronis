@@ -19,13 +19,13 @@ export function createApp(db: DatabaseSync): Express {
   app.use(express.json());
 
   // Static Assets (React UI)
-  const staticPath = path.resolve(__dirname, '../app/static');
-  app.use('/static', express.static(staticPath));
+  const publicPath = path.resolve(__dirname, '../public');
+  app.use(express.static(publicPath));
+  app.use('/static', express.static(publicPath));
 
   // Serve Main Single Page Application
   app.get('/', (_req: Request, res: Response) => {
-    const indexPath = path.resolve(__dirname, '../app/templates/index.html');
-    res.sendFile(indexPath);
+    res.sendFile(path.join(publicPath, 'index.html'));
   });
 
   // Mount API Routers
