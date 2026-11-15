@@ -21,3 +21,7 @@ data/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Python artifacts
+__pycache__/
+*.pyc
