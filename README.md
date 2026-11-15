@@ -22,8 +22,8 @@ The project follows a standard layered architecture with strict separation betwe
 
 ```
 +------------------------------------------------------------------------+
-|                              Frontend UI                               |
-|          (Timeline View, Privacy Toggles, Audit Trail, Verifier)       |
+|                      Frontend UI (React 18)                            |
+|    (App, PrivacyControls, Timeline, AuditLog, DirectVerifier)          |
 +------------------------------------------------------------------------+
                                     │  HTTP (JSON)
                                     ▼
@@ -54,6 +54,7 @@ The project follows a standard layered architecture with strict separation betwe
 
 ### Key Decisions
 - **Backend Authorization Boundary**: Filtering is not delegated to the client. Categories toggled OFF are excluded at the SQL level for queries and blocked with HTTP 403 on direct ID lookups.
+- **React 18 Frontend**: Built with modular React 18 components (`useState`, `useEffect`, `useCallback`) separating privacy controls, chronological timeline, audit logs, and an interactive direct API verifier. Runs with zero node/npm setup friction.
 - **Minimal External Dependencies**: Built with Python, Flask, Pydantic, and standard library SQLite. Evaluators can clone and run tests immediately without configuring external database services or running separate node build pipelines.
 - **Immutable Audit Logging**: Write-only audit service records every read, write, toggle, and denied access attempt.
 
