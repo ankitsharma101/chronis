@@ -1,6 +1,6 @@
-# Chronis — Privacy-Aware Memory Timeline
+# Chronis — Privacy-Aware Memory Timeline (TypeScript)
 
-A lightweight, robust backend prototype and interface for Chronis that stores user memory events, displays them in a chronological timeline, and enforces category-level privacy controls with an immutable audit log.
+A robust full-stack prototype for Chronis built with **TypeScript**, **Express**, **Zod**, **SQLite**, and **React 18** that securely stores user memory events, displays them in a chronological timeline, and enforces category-level privacy controls with an immutable audit log.
 
 ---
 
@@ -18,7 +18,7 @@ A lightweight, robust backend prototype and interface for Chronis that stores us
 
 ## Architecture
 
-The project follows a standard layered architecture with strict separation between HTTP routing, domain validation, access control, and persistence.
+The project follows a clean layered architecture with strict separation between HTTP routing, domain validation, access control, and persistence.
 
 ```
 +------------------------------------------------------------------------+
@@ -28,15 +28,15 @@ The project follows a standard layered architecture with strict separation betwe
                                     │  HTTP (JSON)
                                     ▼
 +------------------------------------------------------------------------+
-|                          Flask API Boundary                            |
-|        (/events • /events/{id} • /permissions • /audit-log • /docs)     |
+|                      Express TypeScript API Boundary                   |
+|        (/events • /events/:id • /permissions • /audit-log • /docs)     |
 +------------------------------------------------------------------------+
             │                                           │
             ▼                                           ▼
 +───────────────────────────+               +───────────────────────────+
 |      Event Service        |               |      Privacy Service      |
 |  (CRUD, Filtering,        |◄─────────────►| (Enforces Category Toggles|
-|     Pydantic Validation)  |               |  & Access Control Rules)  |
+|       Zod Validation)     |               |  & Access Control Rules)  |
 +───────────────────────────+               +───────────────────────────+
             │                                           │
             ▼                                           ▼
@@ -53,31 +53,23 @@ The project follows a standard layered architecture with strict separation betwe
 ```
 
 ### Key Decisions
-- **Backend Authorization Boundary**: Filtering is not delegated to the client. Categories toggled OFF are excluded at the SQL level for queries and blocked with HTTP 403 on direct ID lookups.
-- **React 18 Frontend**: Built with modular React 18 components (`useState`, `useEffect`, `useCallback`) separating privacy controls, chronological timeline, audit logs, and an interactive direct API verifier. Runs with zero node/npm setup friction.
-- **Minimal External Dependencies**: Built with Python, Flask, Pydantic, and standard library SQLite. Evaluators can clone and run tests immediately without configuring external database services or running separate node build pipelines.
-- **Immutable Audit Logging**: Write-only audit service records every read, write, toggle, and denied access attempt.
+- **TypeScript Full-Stack**: Strong static typing across domain models, schemas, and service boundaries using TypeScript and Zod.
+- **Backend Authorization Boundary**: Privacy permissions are not evaluated on the client. Categories toggled OFF are excluded at the SQL level for queries and blocked with HTTP 403 on direct ID lookups.
+- **Node 22 Native SQLite**: Uses Node's built-in SQLite engine (`node:sqlite DatabaseSync`) for high-performance, synchronous, zero-dependency ACID database persistence.
+- **Immutable Audit Logging**: Write-only audit service records every read, write, toggle, and denied access attempt. Any mutating method to `/audit-log` returns HTTP 405 Method Not Allowed.
+- **React 18 Frontend**: Modular React 18 functional components (`useState`, `useEffect`, `useCallback`) separating privacy controls, chronological timeline, audit logs, and an interactive direct API verifier.
 
 ---
 
 ## Setup & Quickstart
 
 ### Prerequisites
-- Python 3.10+ (tested on Python 3.13)
-- Git
+- Node.js (v20+ or v22)
+- npm
 
-### 1. Clone & Setup Environment
+### 1. Install Dependencies
 ```bash
-git clone https://github.com/<your-username>/chronis-memory-timeline.git
-cd chronis-memory-timeline
-
-python -m venv venv
-# Linux / macOS:
-source venv/bin/activate
-# Windows:
-.\venv\Scripts\activate
-
-pip install -r requirements.txt
+npm install
 ```
 
 ### 2. Configuration
@@ -89,9 +81,9 @@ Default configuration uses SQLite (`chronis.db`) and runs on port `5000`.
 
 ### 3. Run the Server
 ```bash
-python run.py
+npm start
 ```
-- Web Application: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+- Web Application UI: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 - Swagger Documentation: [http://127.0.0.1:5000/docs](http://127.0.0.1:5000/docs)
 - OpenAPI Specification: [http://127.0.0.1:5000/openapi.json](http://127.0.0.1:5000/openapi.json)
 
@@ -110,7 +102,7 @@ The system manages 4 data categories:
    - The user's active permissions are retrieved.
    - The query dynamically binds only allowed categories: `WHERE user_id = ? AND type IN (...)`.
    - If a specific disabled category is queried (`GET /events?type=location` when location is OFF), the backend returns an empty list (`[]`) and writes an audit event. Data for disabled categories is never loaded from disk into memory.
-2. **Direct Resource Access (`GET /events/{id}`)**:
+2. **Direct Resource Access (`GET /events/:id`)**:
    - If an event exists but its category is currently disabled, the backend halts execution and returns **HTTP 403 Forbidden**:
      ```json
      {
@@ -130,9 +122,9 @@ The system manages 4 data categories:
 | Method | Endpoint | Description | Auth / Headers |
 |---|---|---|---|
 | `GET` | `/events` | List events chronologically. Supports `type` filtering and pagination (`page`, `limit`). Filters out disabled categories. | `X-User-Id` (optional) |
-| `GET` | `/events/{id}` | Fetch single event. Returns `403 Forbidden` if category is OFF. | `X-User-Id` (optional) |
-| `POST` | `/events` | Create a new timeline event. Validates body against schema. | `X-User-Id` (optional) |
-| `DELETE` | `/events/{id}` | Permanently delete an event by ID. | `X-User-Id` (optional) |
+| `GET` | `/events/:id` | Fetch single event. Returns `403 Forbidden` if category is OFF. | `X-User-Id` (optional) |
+| `POST` | `/events` | Create a new timeline event. Validates body against Zod schema. | `X-User-Id` (optional) |
+| `DELETE` | `/events/:id` | Permanently delete an event by ID. | `X-User-Id` (optional) |
 | `GET` | `/permissions` | Get current ON/OFF status of the 4 categories. | `X-User-Id` (optional) |
 | `PUT` | `/permissions` | Update one or more category toggles (ON/OFF). | `X-User-Id` (optional) |
 | `GET` | `/audit-log` | Retrieve paginated audit records (Read-Only). | `X-User-Id` (optional) |
@@ -193,14 +185,14 @@ CREATE INDEX idx_audit_user_time ON audit_logs(user_id, timestamp DESC);
 
 ## Testing
 
-Run the full automated test suite with pytest:
+Run the full automated test suite:
 ```bash
-pytest -v
+npm test
 ```
 
-### Coverage
+### Coverage (26 Passing Tests)
 - Event CRUD operations (`POST`, `GET`, `DELETE`)
-- Pydantic payload validation and error handling
+- Zod payload validation and structured error handling
 - Offset/limit pagination and category filtering
 - Default permission verification (all ON)
 - Backend privacy enforcement on list queries (disabled category omitted)
@@ -225,13 +217,13 @@ Recommended 3-5 minute demo walkthrough:
 3. **Privacy Controls (1.5m)**:
    - Toggle the **Location** switch to **OFF**.
    - Show the timeline updating instantly: location events disappear.
-   - Open the **Direct API Verifier** tab (or make a curl request to `GET /events/{id}`).
+   - Open the **Direct API Verifier** tab (or make a curl request to `GET /events/:id`).
    - Show that the backend returns **HTTP 403 Forbidden** with an explicit error message, proving privacy is enforced on the API, not just the UI.
 4. **Audit Trail (30s)**:
    - Switch to the **Audit Log** tab.
    - Point out the `UPDATE_PERMISSION` log and the `DENIED` record from the blocked attempt.
 5. **Run Tests (30s)**:
-   - In terminal, execute `pytest -v` to show all 23 tests passing.
+   - In terminal, execute `npm test` to show all 26 tests passing in ~1 second.
 
 ---
 
@@ -240,12 +232,12 @@ Recommended 3-5 minute demo walkthrough:
 ### 1. Where is authorization enforced and why?
 Authorization is enforced in the **backend application layer (Privacy Service & Data Repository)** before any data read or serialization occurs.
 - **For Collection Queries (`GET /events`)**: The user's active permissions are evaluated first, and only enabled categories are included in the SQL `WHERE type IN (...)` clause. Disallowed categories are never read from disk into application memory or transmitted over the network.
-- **For Single-Resource Lookups (`GET /events/{id}`)**: Before returning an event, `EventService` checks whether the event's category is currently active. If disabled, it immediately halts, writes a `DENIED` audit record, and raises an HTTP 403 Forbidden error.
+- **For Single-Resource Lookups (`GET /events/:id`)**: Before returning an event, `EventService` checks whether the event's category is currently active. If disabled, it immediately halts, writes a `DENIED` audit record, and raises an HTTP 403 Forbidden error.
 - **Why**: Client-side filtering is insecure because any client or script can inspect HTTP responses or call endpoints directly. Enforcing authorization at the backend query layer guarantees zero data leakage, prevents unauthorized access, and maintains an auditable trail of all access decisions.
 
 ### 2. What happens when a user requests data they are not allowed to see?
 - **List Queries (`GET /events`)**: Disabled categories are excluded from results. If a client explicitly requests a disabled category (`GET /events?type=location` when location is OFF), the backend returns an empty list `{"events": [], "total": 0}` and logs the filtered access.
-- **Direct Resource Lookups (`GET /events/{id}`)**: If an event belongs to a disabled category, the backend returns **HTTP 403 Forbidden** with a clear message:
+- **Direct Resource Lookups (`GET /events/:id`)**: If an event belongs to a disabled category, the backend returns **HTTP 403 Forbidden** with a clear message:
   ```json
   {
     "error": "Forbidden",
@@ -282,4 +274,4 @@ At 1,000,000 events per user, SQLite single-file queries and offset pagination w
 1. **Tamper-Evident Audit Chains**: Add cryptographic hash chaining (`SHA-256(prev_hash + log_record)`) to ensure the audit log cannot be retroactively altered.
 2. **Time-Bounded & Redaction Policies**: Allow users to configure retention windows and field-level masking.
 3. **Authentication & Scoped API Tokens**: Replace the demo header with JWT/OAuth2 authentication supporting granular scopes (e.g. `events:read:notes`).
-4. **Database Migrations**: Add Alembic to support automated schema migrations without table drops.
+4. **Database Migrations**: Add an automated migration pipeline (e.g. Prisma Migrate or Drizzle Kit).
