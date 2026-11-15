@@ -49,7 +49,7 @@ export function createDocsRouter(): Router {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chronis API Documentation (TypeScript)</title>
+  <title>Chronis API Documentation</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏳</text></svg>">
   <style>

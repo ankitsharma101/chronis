@@ -203,7 +203,7 @@ function App() {
             <span className="brand-icon">⏳</span>
             <div className="brand-text">
               <span className="brand-title">CHRONIS</span>
-              <span className="brand-subtitle">Privacy-Aware Memory Timeline (React 18)</span>
+              <span className="brand-subtitle">Privacy-Aware Memory Timeline</span>
             </div>
           </div>
           <div className="nav-actions">

@@ -1,4 +1,4 @@
-# Chronis — Privacy-Aware Memory Timeline (TypeScript)
+# Chronis — Privacy-Aware Memory Timeline
 
 A robust full-stack prototype for Chronis built with **TypeScript**, **Express**, **Zod**, **SQLite**, and **React 18** that securely stores user memory events, displays them in a chronological timeline, and enforces category-level privacy controls with an immutable audit log.
 
